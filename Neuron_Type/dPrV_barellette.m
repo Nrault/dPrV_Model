@@ -1,27 +1,28 @@
-%clear
+clear
 
 %Simulation parameters
 Tmin = 0;
-Tmax = 0.8;
+Tmax = 1;
 dt = 0.000005;
 Tvec = Tmin:dt:Tmax;
 
 %Neuron parameters
-Gl = 3e-8;
-maxGna = 1.2e-5;
+Gl = 1e-8;
+
+maxGna = 2e-5;
 maxGk = 2e-6;
 maxGh = 200e-9;
-maxGa = 4.77e-6;
+maxGa = 3e-6;
 
 El = -0.060;
 Eh = -0.020;
 Ena = 0.055;
-Ek = -0.072;
-Ea = -0.075;
+Ek = -0.090;
+Ea = -0.120;
 
-Cm = 1/(633e6);
+Cm = 1/633e6;%0.1e-9;
 
-Iapp = zeros(1, length(Tvec)) * 850e-12;
+Iapp = zeros(1, length(Tvec));
 Vvec = zeros(1, length(Tvec));
 Vvec(1) = El;
 
@@ -46,21 +47,36 @@ a(1) = 0.0;
 b(1) = 0.0;
 
 %Setup current pulses
-for i = 1:length(Tvec)
-    if(i*dt >= 100e-3 && i*dt <= 600e-3)
-        Iapp(i) = 850e-12;
+i = 1;
+
+while i < length(Tvec)
+    if(i*dt >= 0e-3 && i*dt <= 100e-3)
+        Iapp(i) = 0e-9; % -850e-12;
+        
+    else
+         if(i*dt > 100e-3 && i*dt <= 600e-3)
+            Iapp(i) = -1e-9; %1e-9;
+         else
+            Iapp(i) = 1e-9;
+         end
     end
+    i = i + 1;
+    %if (i*dt > 100e-3 && i*dt < 200e-3)
+    %   Iapp(i) = 0.22e-9; 
+    %end
+    %i = i + 1;
 end
 
 for i = 2:length(Tvec)-1   
     %Compute derivative of membrane potential
     Il(i-1) = (Gl * (El - Vvec(i-1)));
-    %Ina(i-1) = (maxGna * m(i-1)^3 * h(i-1) * (Ena - Vvec(i-1)));
-    Ina(i-1) = 0;
-    %Ik(i-1) = (maxGk * n(i-1)^4 * (Ek - Vvec(i-1)));
-    Ik(i-1) = 0;
+    Ina(i-1) = (maxGna * m(i-1)^3 * h(i-1) * (Ena - Vvec(i-1)));
+    %Ina(i-1) = 0;
+    Ik(i-1) = (maxGk * n(i-1)^4 * (Ek - Vvec(i-1)));
+    %Ik(i-1) = 0;
     Ia(i-1) = (maxGa * a(i-1)^3 * b(i-1) * (Ea - Vvec(i-1)));
     Ih(i-1) = (maxGh * m_h(i-1) * (Eh - Vvec(i-1)));
+    %Ih(i-1) = 0;
     dvdt = (Il(i-1) + Ina(i-1) + Ik(i-1) + Ia(i-1) + Ih(i-1) + Iapp(i-1))/Cm;
     
     
@@ -184,7 +200,7 @@ function [m_h_inf, tau_m_h] = compute_var_H(Vm)
 end
 
 function m_h_inf = compute_m_h_inf(Vm)
-    m_h_inf = 1 / (1 + exp((Vm + 0.070) / 0.00873));
+    m_h_inf = 1. / (1. + exp((Vm + 0.070) / 0.006));
 end
 
 function tau_m_h = compute_tau_m_h(Vm)
